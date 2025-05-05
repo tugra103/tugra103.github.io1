@@ -2,6 +2,29 @@
 <html>
   <head>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.27.5/full/pyodide.js"></script>
+    <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyAcQr49Ee164k5Xot26lbhp4-WTdMYjj8I",
+    authDomain: "nothing31-2020.firebaseapp.com",
+    projectId: "nothing31-2020",
+    storageBucket: "nothing31-2020.firebasestorage.app",
+    messagingSenderId: "125647316010",
+    appId: "1:125647316010:web:85cc58b2a66bf90cfdcf53",
+    measurementId: "G-YP5JYVL673"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
   </head>
 
   <body>
