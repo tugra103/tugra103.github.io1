@@ -6,12 +6,12 @@
     <script src="https://cxrtnc.leaningtech.com/1.1.2/cx.js"></script>
     <script type="module">
       $(document).ready(function(){
-    $('input').bind('focus',function() {
+    $(#console).bind('focus',function() {
         $(window).scrollTop(10);
         var keyboard_shown = $(window).scrollTop() > 0;
         $(window).scrollTop(0);
 
-        $('#test').append(keyboard_shown?'keyboard ':'nokeyboard ');
+        $('#console').append(keyboard_shown?'keyboard ':'nokeyboard ');
     });
 });
       const registerServiceWorker = async () => {
