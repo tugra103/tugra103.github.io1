@@ -7,6 +7,15 @@
     <script src="https://cdn.jsdelivr.net/npm/jquery.terminal@2.x.x/js/jquery.terminal.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery.terminal@2.x.x/css/jquery.terminal.min.css" />
     <script type="module">
+      $(document).ready(function(){
+    $('input').bind('focus',function() {
+        $(window).scrollTop(10);
+        var keyboard_shown = $(window).scrollTop() > 0;
+        $(window).scrollTop(0);
+
+        $('#test').append(keyboard_shown?'keyboard ':'nokeyboard ');
+    });
+});
       const registerServiceWorker = async () => {
           if ("serviceWorker" in navigator) {
               try {
