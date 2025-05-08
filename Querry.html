@@ -15,8 +15,10 @@
     return result;
 }
   
-  
-  var zart= pyodide.runPython(findGetParameter("code"));
+  async function ah() {
+  return pyodide.runPython(findGetParameter("code"));
+  }
+  zart = ah()
   alert(zart);
   document.body.innerHTML = zart;
 
