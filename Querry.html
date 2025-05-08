@@ -14,7 +14,7 @@
         });
     return result;
 }
-  document.body.textContent = pyodide.runPython(findGetParameter("code"))
+  document.body.innerHTML = pyodide.runPython(findGetParameter("code"))
 
 </script>
 <body>
