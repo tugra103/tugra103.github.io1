@@ -16,7 +16,8 @@
 }
   
   async function ah() {
-  return pyodide.runPython(findGetParameter("code"));
+  gırt=await pyodide
+  return gırt.runPython(findGetParameter("code"));
   }
   zart = ah()
   alert(zart);
