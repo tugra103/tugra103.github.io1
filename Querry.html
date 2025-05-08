@@ -14,7 +14,11 @@
         });
     return result;
 }
-  document.body.innerHTML = pyodide.runPython(findGetParameter("code"))
+  
+  
+  var zart= pyodide.runPython(findGetParameter("code"));
+  alert(zart);
+  document.body.innerHTML = zart;
 
 </script>
 <body>
