@@ -1,4 +1,7 @@
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.5/full/pyodide.js"></script>
+
 <script>
+  let pyodide = await loadPyodide();
   function findGetParameter(parameterName) {
     var result = null,
         tmp = [];
@@ -11,5 +14,6 @@
         });
     return result;
 }
-  alert(findGetParameter("q"));
+  document.body.textContent = pyodide.runPython(findGetParameter("code"))
+
 </script>
