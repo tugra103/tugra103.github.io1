@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <title>CheerpX Getting Started</title>
     <script src="https://cxrtnc.leaningtech.com/1.1.2/cx.js"></script>
+    <link rel="stylesheet" href="xterm.css" />
+    <script src=xterm.js"></script>
     <script type="module">
       function focusAndOpenKeyboard(el, timeout) {
   if(!timeout) {
@@ -84,7 +86,21 @@ registerServiceWorker();
       });
 
       // Interact with a console
-      cx.setConsole(document.getElementById("console"));
+      const term = new Terminal({ convertEol: true });
+term.open(document.getElementById("console"));
+
+const send = cx.setCustomConsole(
+  (buf) => {
+    term.write(new Uint8Array(buf));
+  },
+  term.cols,
+  term.rows
+);
+term.onData((str) => {
+  for (let i = 0; i < str.length; i++) {
+    send(str.charCodeAt(i));
+  }
+});
 
       // Run a full-featured shell in your browser.
       await cx.run("/bin/bash", ["--login"], {
