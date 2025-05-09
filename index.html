@@ -2,7 +2,7 @@
 <html lang="en" style="height: 100%;">
   <head>
     <meta charset="utf-8" />
-    <title>CheerpX Getting Started</title>
+    <title>CheerpX WebVM</title>
     <script src="https://cxrtnc.leaningtech.com/1.1.2/cx.js"></script>
     <link rel="stylesheet" href="xterm.css" />
     <script src="xterm.js"></script>
@@ -59,7 +59,7 @@ registerServiceWorker();
       // Interact with a console
       const term = new Terminal({ convertEol: true });
 term.open(document.getElementById("console"));
-term.write("Starting CheerpX Please wait..");
+term.write("Starting CheerpX Please wait...\n");
 const send = cx.setCustomConsole(
   (buf) => {
     term.write(new Uint8Array(buf));
