@@ -72,6 +72,16 @@ term.onData((str) => {
     send(str.charCodeAt(i));
   }
 });
+      function setScreenSize(display) {
+  const displayWidth = display.offsetWidth;
+  const displayHeight = display.offsetHeight;
+
+  cx.setKmsCanvas(display, displayWidth, displayHeight);
+}
+
+// Set up the canvas in a web application
+const canvasElement = document.getElementById("kms");
+setScreenSize(canvasElement);
 
       // Run a full-featured shell in your browser.
       await cx.run("/bin/bash", ["--login"], {
@@ -89,6 +99,6 @@ term.onData((str) => {
       });
     </script>
   </head>
-  <body id="console" style="height: 100%; background: black;">
-  </body>
+  <body id="console" style="height: 100%; background: black;width: 25%;"></body>
+  <canvas id="kms" style="height: 100%; width: 75%;"></canvas>
 </html>
