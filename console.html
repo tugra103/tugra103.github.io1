@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nostalgist Emulator 🎮</title>
+  <script src="https://unpkg.com/nostalgist"></script>
+  <style>
+    body {
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      text-align: center;
+      text-shadow: 2px 2px #000;
+    }
+
+    .container {
+      background: rgba(0, 0, 0, 0.6);
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px #000;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    select, input[type="text"], input[type="file"], button {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      width: 100%;
+      font-size: 1rem;
+    }
+
+    button {
+      background-color: #00c6ff;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #emulator-screen {
+      margin-top: 20px;
+      border: 4px solid #00c6ff;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 640px;
+      aspect-ratio: 4 / 3;
+      background: #000;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+      #emulator-screen {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Nostalgist Emulator 🎮</h1>
+  <div class="container">
+    <label for="console">Konsol Seç:</label>
+    <select id="console">
+      <option value="fceumm">NES</option>
+      <option value="snes9x">SNES</option>
+      <option value="genesis_plus_gx">Sega Genesis</option>
+      <option value="mgba">GBA / GBC / GB</option>
+    </select>
+
+    <label for="rom-url">ROM URL:</label>
+    <input type="text" id="rom-url" placeholder="https://example.com/oyun.nes">
+
+    <label for="rom-file">ROM Dosyası Yükle:</label>
+    <input type="file" id="rom-file" accept=".nes,.sfc,.gb,.gba,.bin">
+
+    <button onclick="launchFromURL()">URL ile Başlat</button>
+    <button onclick="launchFromFile()">Dosya ile Başlat</button>
+  </div>
+
+  <div id="emulator-screen"></div>
+
+  <script>
+    window.launchFromURL = async function () {
+      const core = document.getElementById('console').value;
+      const url = document.getElementById('rom-url').value;
+      if (!url) return alert("Bir URL girmen gerekiyor!");
+      await Nostalgist.launch({
+        core,
+        rom: url,
+        container: document.getElementById('emulator-screen'),
+        retroarchConfig: {
+          rewind_enable: true
+        }
+      });
+    }
+
+    window.launchFromFile = async function () {
+      const core = document.getElementById('console').value;
+      const fileInput = document.getElementById('rom-file');
+      if (!fileInput.files.length) return alert("Lütfen bir ROM dosyası seç!");
+      const file = fileInput.files[0];
+      await Nostalgist.launch({
+        core,
+        rom: file,
+        container: document.getElementById('emulator-screen'),
+        retroarchConfig: {
+          rewind_enable: true
+        }
+      });
+    }
+  </script>
+</body>
+</html>
