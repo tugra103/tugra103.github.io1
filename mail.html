@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMTP.js ile E-posta Gönder</title>
+</head>
+<body>
+    <h2>E-posta Gönder</h2>
+
+    <form id="emailForm">
+        <label for="email">E-posta Adresi:</label><br>
+        <input type="email" id="email" name="email" required><br><br>
+
+        <label for="subject">Konu:</label><br>
+        <input type="text" id="subject" name="subject" required><br><br>
+
+        <label for="message">Mesaj:</label><br>
+        <textarea id="message" name="message" required></textarea><br><br>
+
+        <button type="submit">E-posta Gönder</button>
+    </form>
+
+    <script src="https://cdn.jsdelivr.net/npm/smtpjs@3.0.0/dist/smtp.min.js"></script>
+
+    <script>
+        document.getElementById('emailForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            // Form verilerini al
+            var email = document.getElementById('email').value;
+            var subject = document.getElementById('subject').value;
+            var message = document.getElementById('message').value;
+
+            // SMTP.js kullanarak e-posta gönder
+            Email.send({
+                Host: "smtp.gmail.com",  // SMTP sunucu (örneğin Gmail)
+                Username: "your-email@gmail.com",  // Gönderen e-posta adresi
+                Password: "your-email-password",  // E-posta şifresi
+                To: email,
+                From: "your-email@gmail.com",  // Gönderen e-posta adresi
+                Subject: subject,
+                Body: message
+            }).then(function (response) {
+                alert("E-posta başarıyla gönderildi: " + response);
+            }).catch(function (error) {
+                alert("E-posta gönderilirken bir hata oluştu: " + error);
+            });
+        });
+    </script>
+</body>
+</html>
