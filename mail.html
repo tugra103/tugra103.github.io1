@@ -8,9 +8,20 @@
 <body>
     <h2>E-posta Gönder</h2>
 
-    <form id="emailForm">
-        <label for="email">E-posta Adresi:</label><br>
-        <input type="email" id="email" name="email" required><br><br>
+    <form id="smtpForm">
+        <h3>SMTP Bilgilerinizi Girin</h3>
+        <label for="smtpHost">SMTP Sunucu Adresi:</label><br>
+        <input type="text" id="smtpHost" name="smtpHost" placeholder="Örn: smtp.gmail.com" required><br><br>
+
+        <label for="smtpEmail">E-posta Adresiniz:</label><br>
+        <input type="email" id="smtpEmail" name="smtpEmail" required><br><br>
+
+        <label for="smtpPassword">Şifreniz:</label><br>
+        <input type="password" id="smtpPassword" name="smtpPassword" required><br><br>
+
+        <h3>Gönderilecek E-posta Bilgileri</h3>
+        <label for="recipientEmail">Alıcı E-posta Adresi:</label><br>
+        <input type="email" id="recipientEmail" name="recipientEmail" required><br><br>
 
         <label for="subject">Konu:</label><br>
         <input type="text" id="subject" name="subject" required><br><br>
@@ -24,23 +35,28 @@
     <script src="https://cdn.jsdelivr.net/npm/smtpjs@3.0.0/dist/smtp.min.js"></script>
 
     <script>
-        document.getElementById('emailForm').addEventListener('submit', function(event) {
+        document.getElementById('smtpForm').addEventListener('submit', function(event) {
             event.preventDefault();
 
-            // Form verilerini al
-            var email = document.getElementById('email').value;
+            // SMTP bilgilerini al
+            var smtpHost = document.getElementById('smtpHost').value;
+            var smtpEmail = document.getElementById('smtpEmail').value;
+            var smtpPassword = document.getElementById('smtpPassword').value;
+
+            // E-posta bilgilerini al
+            var recipientEmail = document.getElementById('recipientEmail').value;
             var subject = document.getElementById('subject').value;
             var message = document.getElementById('message').value;
 
             // SMTP.js kullanarak e-posta gönder
             Email.send({
-                Host: "smtp.gmail.com",  // SMTP sunucu (örneğin Gmail)
-                Username: "your-email@gmail.com",  // Gönderen e-posta adresi
-                Password: "your-email-password",  // E-posta şifresi
-                To: email,
-                From: "your-email@gmail.com",  // Gönderen e-posta adresi
-                Subject: subject,
-                Body: message
+                Host: smtpHost,  // Kullanıcının girdiği SMTP sunucu adresi
+                Username: smtpEmail,  // Kullanıcının girdiği e-posta adresi
+                Password: smtpPassword,  // Kullanıcının girdiği şifre
+                To: recipientEmail,  // Alıcı e-posta adresi
+                From: smtpEmail,  // Gönderen e-posta adresi
+                Subject: subject,  // E-posta konusu
+                Body: message  // E-posta içeriği
             }).then(function (response) {
                 alert("E-posta başarıyla gönderildi: " + response);
             }).catch(function (error) {
@@ -50,3 +66,4 @@
     </script>
 </body>
 </html>
+
