@@ -30,6 +30,9 @@
 // …
 
 registerServiceWorker();
+      const term = new Terminal({ convertEol: true });
+term.open(document.getElementById("console"));
+term.write("Starting CheerpX Please wait...\n");
 
       // The read-only disk image from Leaning Technologies' fast cloud backend
       const cloudDevice = await CheerpX.CloudDevice.create(
@@ -57,9 +60,7 @@ registerServiceWorker();
       });
 
       // Interact with a console
-      const term = new Terminal({ convertEol: true });
-term.open(document.getElementById("console"));
-term.write("Starting CheerpX Please wait...\n");
+
 const send = cx.setCustomConsole(
   (buf) => {
     term.write(new Uint8Array(buf));
