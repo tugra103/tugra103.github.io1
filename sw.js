@@ -40,7 +40,9 @@ function serviceWorkerInit() {
 	// Listen for fetch requests and call handleFetch function.
 	self.addEventListener("fetch", function (e) {
 		try {
-			e.respondWith(handleFetch(e.request));
+			if (e.url === "tugra102.github.io") {
+				e.respondWith(handleFetch(e.request));
+			}else{console.log("Not the VM, skipping the change")}
 		} catch (err) {
 			console.log("Serviceworker NetworkError:" + err);
 		}
