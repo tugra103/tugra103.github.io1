@@ -7,6 +7,10 @@
     <link rel="stylesheet" href="xterm.css" />
     <script src="xterm.js"></script>
     <script type="module">
+       const term = new Terminal({ convertEol: true });
+term.open(document.getElementById("console"));
+term.write("Starting CheerpX Please wait...\n");
+
 
       const registerServiceWorker = async () => {
   if ("serviceWorker" in navigator) {
@@ -15,14 +19,14 @@
         scope: "/",
       });
       if (registration.installing) {
-        console.log("Service worker installing");
+        term.write("Service worker installing");
       } else if (registration.waiting) {
-        console.log("Service worker installed");
+        term.write("Service worker installed");
       } else if (registration.active) {
-        console.log("Service worker active");
+        term.write("Service worker active");
       }
     } catch (error) {
-      console.error(`Registration failed with ${error}`);
+      term.write(`Registration failed with ${error}`);
     }
   }
 };
@@ -30,10 +34,6 @@
 // …
 
 registerServiceWorker();
-      const term = new Terminal({ convertEol: true });
-term.open(document.getElementById("console"));
-term.write("Starting CheerpX Please wait...\n");
-
       // The read-only disk image from Leaning Technologies' fast cloud backend
       const cloudDevice = await CheerpX.CloudDevice.create(
         "wss://disks.webvm.io/debian_large_20230522_5044875331.ext2"
