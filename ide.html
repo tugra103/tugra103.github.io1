@@ -68,23 +68,12 @@ guess = Guess()
     guesslangReady = true;
     document.getElementById('langDisplay').textContent = "Hazır, kod yaz!";
     console.log("🐍 Pyodide ve Guesslang yüklendi.");
-  }
+  };
 
   // Monaco Editor başlatma
   require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@latest/min/vs' }});
   require(['vs/editor/editor.main'], function() {
     editor = monaco.editor.create(document.getElementById('editor'), {
-      value: `<!DOCTYPE html>
-<html>
-<head><title>Merhaba</title></head>
-<body>
-<h1>HTML Preview Demo</h1>
-<p>Buraya HTML kodunu yazabilirsin.</p>
-<script>
-  console.log("JS çalıştı!");
-</script>
-</body>
-</html>`,
       language: 'plaintext',
       theme: 'vs-dark',
       automaticLayout: true,
