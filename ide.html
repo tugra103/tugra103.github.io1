@@ -1,152 +1,109 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Pyodide + Monaco Minimal IDE</title>
-
-<style>
-  html, body {
-    margin:0; padding:0; height:100%;
-    background:#1e1e1e;
-    color:#eee;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  }
-  #editor {
-    height: 65vh;
-    width: 100%;
-  }
-  #terminalToggle {
-    position: fixed;
-    top: 10px;
-    right: 150px;
-    background: #007acc;
-    color: white;
-    border: none;
-    padding: 8px 14px;
-    font-weight: bold;
-    border-radius: 6px;
-    cursor: pointer;
-    user-select: none;
-    z-index: 1100;
-  }
-  #runBtn {
-    position: fixed;
-    top: 10px;
-    right: 20px;
-    background: #0a84ff;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    font-weight: bold;
-    border-radius: 6px;
-    cursor: pointer;
-    user-select: none;
-    z-index: 1100;
-  }
-  #output {
-    position: fixed;
-    bottom: 0; left: 0;
-    width: 100%;
-    height: 30vh;
-    background: #111;
-    color: #0f0;
-    font-family: monospace;
-    padding: 10px;
-    overflow-y: auto;
-    white-space: pre-wrap;
-    border-top: 3px solid #007acc;
-    display: none;
-    box-sizing: border-box;
-    z-index: 1000;
-  }
-</style>
-
-<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.33.0/min/vs/loader.js"></script>
-<script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
-
+  <meta charset="UTF-8" />
+  <title>Otomatik Dil Algılama ve Çalıştırma</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.12.0/dist/tf.min.js"></script>
+  <script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.23.3/full/pyodide.js"></script>
+  <style>
+    html, body, #editor { margin:0; padding:0; height: 70vh; width: 100%; }
+    #terminal { height: 30vh; background: black; color: white; padding: 10px; overflow-y: auto; font-family: monospace;}
+    button { font-size: 1.2em; margin: 10px; }
+  </style>
 </head>
 <body>
 
-<button id="terminalToggle">Terminal Aç/Kapa</button>
-<button id="runBtn" disabled>▶️ Çalıştır</button>
 <div id="editor"></div>
-<div id="output">Terminal Çıktısı...</div>
+<button id="runBtn">Çalıştır</button>
+<div id="terminal">🖥️ Çıktı burada...</div>
 
 <script>
-  let pyodide; // Başta null ataması yok
+  require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@latest/min/vs' }});
   let editor;
-  let terminalVisible = false;
 
-  require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.33.0/min/vs' } });
-  require(['vs/editor/editor.main'], () => {
-    editor = monaco.editor.create(document.getElementById('editor'), {
-      value: `# Python kodunu buraya yaz\nfor i in range(5):\n    print(i)`,
-      language: 'python',
-      theme: 'vs-dark',
-      automaticLayout: true,
-      minimap: { enabled: false },
-      fontSize: 16,
-      mouseWheelZoom: true,
-      scrollbar: { verticalScrollbarSize: 14, horizontalScrollbarSize: 14 },
-      dragAndDrop: true,
-    });
-  });
+  // Pyodide yükleme
+  let pyodideReady = false;
+  let pyodide;
 
-  async function loadPyodideAndSetup() {
-    const outputElem = document.getElementById('output');
-    outputElem.textContent = 'Pyodide yükleniyor...';
+  async function loadPyodideAndPackages() {
     pyodide = await loadPyodide();
+    pyodideReady = true;
+    console.log("🐍 Pyodide hazır");
+  }
+  loadPyodideAndPackages();
 
-    pyodide.setStdout({
-      batched: (s) => {
-        if(terminalVisible) {
-          outputElem.textContent += s;
-          outputElem.scrollTop = outputElem.scrollHeight;
-        }
-      }
-    });
-    pyodide.setStderr({
-      batched: (s) => {
-        if(terminalVisible) {
-          outputElem.textContent += s;
-          outputElem.scrollTop = outputElem.scrollHeight;
-        }
-      }
+  // Monaco editör oluşturma
+  require(['vs/editor/editor.main'], function () {
+    editor = monaco.editor.create(document.getElementById('editor'), {
+      value: `print("Merhaba Dünya!")`,
+      language: 'plaintext',
+      theme: 'vs-dark',
+      automaticLayout: true
     });
 
-    outputElem.textContent += '\nPyodide yüklendi!';
-    document.getElementById('runBtn').disabled = false;
-  }
-
-  async function runPythonCode() {
-    if (!pyodide) {
-      alert('Pyodide henüz yüklenmedi!');
-      return;
-    }
-
-    const outputDiv = document.getElementById('output');
-    outputDiv.textContent = ''; // Temizle
-    terminalVisible = true;
-    outputDiv.style.display = 'block';
-
-    const code = editor.getValue();
-    try {
-      await pyodide.runPythonAsync(code);
-    } catch (err) {
-      outputDiv.textContent += `\nHata:\n${err}\n`;
-    }
-  }
-
-  document.getElementById('runBtn').addEventListener('click', runPythonCode);
-
-  document.getElementById('terminalToggle').addEventListener('click', () => {
-    terminalVisible = !terminalVisible;
-    const out = document.getElementById('output');
-    out.style.display = terminalVisible ? 'block' : 'none';
+    // Kod değiştikçe otomatik dil algılama
+    editor.onDidChangeModelContent(() => {
+      const code = editor.getValue();
+      const lang = detectLanguageSmart(code);
+      monaco.editor.setModelLanguage(editor.getModel(), lang);
+      console.log("🧠 Algılanan dil:", lang);
+    });
   });
 
-  loadPyodideAndSetup();
+  // Basit ama akıllı dil tahmini
+  function detectLanguageSmart(code) {
+    const langPatterns = [
+      { lang: 'python',     regex: /\bdef\b|\bimport\b|\bprint\(/ },
+      { lang: 'javascript', regex: /\bfunction\b|\bconsole\.log\b|=>/ },
+      { lang: 'cpp',        regex: /#include\s+<|int\s+main\s*\(/ },
+      { lang: 'html',       regex: /<!DOCTYPE\s+html>|<html>|<body>/ },
+      { lang: 'bash',       regex: /^#!\/bin\/bash|\becho\b/ },
+      { lang: 'java',       regex: /\bpublic\s+class\b|\bSystem\.out\.println/ },
+      { lang: 'go',         regex: /\bpackage\s+main\b|\bfunc\b/ },
+      { lang: 'ruby',       regex: /\bdef\b|\bputs\b|\bend\b/ },
+      { lang: 'csharp',     regex: /\busing\s+System\b|\bnamespace\b/ },
+    ];
+
+    for (let pattern of langPatterns) {
+      if (pattern.regex.test(code)) {
+        return pattern.lang;
+      }
+    }
+    return 'plaintext';
+  }
+
+  // Çalıştırma butonu
+  document.getElementById('runBtn').addEventListener('click', async () => {
+    const code = editor.getValue();
+    const lang = detectLanguageSmart(code);
+    const terminal = document.getElementById('terminal');
+    terminal.textContent = '';
+
+    if (lang === 'python') {
+      if (!pyodideReady) {
+        terminal.textContent = '🐍 Pyodide henüz hazır değil, lütfen bekleyin...';
+        return;
+      }
+      try {
+        const output = await pyodide.runPythonAsync(code);
+        terminal.textContent = output ?? '(Çıktı yok)';
+      } catch(e) {
+        terminal.textContent = `❌ Hata: ${e}`;
+      }
+    }
+    else if (lang === 'javascript') {
+      try {
+        const result = eval(code);
+        terminal.textContent = result ?? '(Çıktı yok)';
+      } catch(e) {
+        terminal.textContent = `❌ Hata: ${e}`;
+      }
+    }
+    else {
+      terminal.textContent = `🚫 Bu dil (${lang}) için çalıştırma desteklenmiyor.`;
+    }
+  });
 </script>
 
 </body>
