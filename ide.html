@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-<title>iPad Uyumlu Python IDE (Monaco + Pyodide)</title>
+<title>Python IDE - Monaco + Pyodide + Autocomplete</title>
 <style>
   html, body {
     margin:0; padding:0; height:100%;
@@ -45,9 +45,13 @@
   }
 </style>
 
+<!-- Monaco Editor loader -->
 <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.33.0/min/vs/loader.js"></script>
+<!-- Pyodide -->
 <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+<!-- Monaco Python Language Support -->
 <script src="https://cdn.jsdelivr.net/npm/@microsoft/monaco-python/dist/index.js"></script>
+
 </head>
 <body>
 
@@ -59,8 +63,10 @@
   let pyodide = null;
   let editor = null;
 
+  // Monaco yükle
   require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.33.0/min/vs' } });
   require(['vs/editor/editor.main'], function () {
+    // monaco-python'u register et
     monaco.languages.python = window.monacoPython;
 
     editor = monaco.editor.create(document.getElementById('editor'), {
@@ -83,31 +89,50 @@
     window.monacoPython.install(monaco);
   });
 
-  async function loadPyodideAndPackages() {
+  async function loadPyodideAndSetup() {
     pyodide = await loadPyodide();
+
+    // print ve stderr çıktısını yakala, output div'ine yaz
+    // Bu örnekte stdout ve stderr'i override ediyoruz
+    pyodide.setStdout({
+      batched: (s) => {
+        appendOutput(s);
+      }
+    });
+    pyodide.setStderr({
+      batched: (s) => {
+        appendOutput(s);
+      }
+    });
+  }
+
+  function appendOutput(text) {
+    const out = document.getElementById('output');
+    out.textContent += text;
+    out.scrollTop = out.scrollHeight;
   }
 
   async function runPythonCode() {
+    if (!pyodide) {
+      alert('Pyodide henüz yüklenmedi, lütfen bekleyin...');
+      return;
+    }
+
+    document.getElementById('output').textContent = ''; // Temizle
     const code = editor.getValue();
+
     try {
-      // Pyodide'da print vs. çıktı için console'a yönlendirme yapalım
-      let output = '';
-      pyodide.globals.set('print', (msg) => {
-        output += msg + '\n';
-      });
-
       await pyodide.runPythonAsync(code);
-
-      document.getElementById('output').textContent = output || '(Boş çıktı)';
     } catch (err) {
-      document.getElementById('output').textContent = 'Hata:\n' + err;
+      appendOutput(`Hata:\n${err}\n`);
     }
   }
 
-  loadPyodideAndPackages();
+  loadPyodideAndSetup();
 
   document.getElementById('runBtn').addEventListener('click', runPythonCode);
 </script>
 
 </body>
 </html>
+
