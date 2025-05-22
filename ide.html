@@ -68,6 +68,7 @@
 </div>
 
 <script>
+  const output = document.getElementById('output');
   let editor, pyodide;
 
   // Monaco Editor yükleme
@@ -85,12 +86,13 @@
   // Pyodide'yi asenkron yükle ve butonu aktif et
   async function loadPyodideAndEnable() {
     pyodide = await loadPyodide();
+    output.textContent = "Pyodide hazır!";
     document.getElementById("runBtn").disabled = false;
   }
   loadPyodideAndEnable();
 
   const runBtn = document.getElementById('runBtn');
-  const output = document.getElementById('output');
+  
 
   runBtn.onclick = async () => {
     const code = editor.getValue();
