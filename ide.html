@@ -85,6 +85,7 @@
 
   // Pyodide'yi asenkron yükle ve butonu aktif et
   async function loadPyodideAndEnable() {
+    output.textContent = "Pyodide hazırlanıyor....";
     pyodide = await loadPyodide();
     output.textContent = "Pyodide hazır!";
     document.getElementById("runBtn").disabled = false;
