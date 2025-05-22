@@ -3,23 +3,51 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-<title>Python IDE - Monaco + Pyodide + Autocomplete</title>
+<title>Python IDE + Açılır/Kapanır Terminal</title>
 <style>
   html, body {
     margin:0; padding:0; height:100%;
-    overflow: hidden;
-    -webkit-user-select: text;
-    -webkit-touch-callout: default;
-    touch-action: manipulation;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #1e1e1e;
+    background: #1e1e1e;
     color: white;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   }
   #editor {
+    height: 65vh;
     width: 100%;
-    height: 70vh;
+  }
+  #terminalToggle {
+    position: fixed;
+    top: 12px;
+    right: 140px;
+    background: #007acc;
+    color: white;
+    border: none;
+    padding: 0.7em 1.2em;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    z-index: 1100;
+  }
+  #runBtn {
+    position: fixed;
+    top: 12px;
+    right: 20px;
+    background: #0a84ff;
+    color: white;
+    border: none;
+    padding: 0.7em 1.5em;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    z-index: 1100;
   }
   #output {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
     height: 30vh;
     background: #111;
     color: #0f0;
@@ -27,46 +55,32 @@
     padding: 10px;
     overflow-y: auto;
     white-space: pre-wrap;
-    border-top: 2px solid #007acc;
-  }
-  #runBtn {
-    position: fixed;
-    top: 12px;
-    right: 20px;
+    border-top: 3px solid #007acc;
+    display: none;
+    box-sizing: border-box;
     z-index: 1000;
-    padding: 1em 1.5em;
-    font-weight: bold;
-    background: #007acc;
-    border: none;
-    color: white;
-    border-radius: 6px;
-    cursor: pointer;
-    touch-action: manipulation;
   }
 </style>
 
-<!-- Monaco Editor loader -->
 <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.33.0/min/vs/loader.js"></script>
-<!-- Pyodide -->
 <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
-<!-- Monaco Python Language Support -->
 <script src="https://cdn.jsdelivr.net/npm/@microsoft/monaco-python/dist/index.js"></script>
 
 </head>
 <body>
 
+<button id="terminalToggle">Terminal Aç/Kapa</button>
+<button id="runBtn">▶️ Çalıştır</button>
 <div id="editor"></div>
 <div id="output">Çıktı burada görünecek...</div>
-<button id="runBtn">▶️ Çalıştır</button>
 
 <script>
   let pyodide = null;
   let editor = null;
+  let terminalVisible = false;
 
-  // Monaco yükle
   require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.33.0/min/vs' } });
   require(['vs/editor/editor.main'], function () {
-    // monaco-python'u register et
     monaco.languages.python = window.monacoPython;
 
     editor = monaco.editor.create(document.getElementById('editor'), {
@@ -92,8 +106,6 @@
   async function loadPyodideAndSetup() {
     pyodide = await loadPyodide();
 
-    // print ve stderr çıktısını yakala, output div'ine yaz
-    // Bu örnekte stdout ve stderr'i override ediyoruz
     pyodide.setStdout({
       batched: (s) => {
         appendOutput(s);
@@ -104,9 +116,24 @@
         appendOutput(s);
       }
     });
+
+    // JS console.log, console.error override (terminalde gösterim)
+    (function() {
+      const oldLog = console.log;
+      const oldErr = console.error;
+      console.log = function(...args) {
+        oldLog.apply(console, args);
+        appendOutput('[JS] ' + args.join(' ') + '\n');
+      };
+      console.error = function(...args) {
+        oldErr.apply(console, args);
+        appendOutput('[JS-ERR] ' + args.join(' ') + '\n');
+      };
+    })();
   }
 
   function appendOutput(text) {
+    if (!terminalVisible) return; // Terminal kapalıysa ekleme yapma
     const out = document.getElementById('output');
     out.textContent += text;
     out.scrollTop = out.scrollHeight;
@@ -118,9 +145,12 @@
       return;
     }
 
-    document.getElementById('output').textContent = ''; // Temizle
-    const code = editor.getValue();
+    const outputDiv = document.getElementById('output');
+    outputDiv.textContent = '';
+    terminalVisible = true;
+    outputDiv.style.display = 'block';
 
+    const code = editor.getValue();
     try {
       await pyodide.runPythonAsync(code);
     } catch (err) {
@@ -128,11 +158,15 @@
     }
   }
 
-  loadPyodideAndSetup();
-
   document.getElementById('runBtn').addEventListener('click', runPythonCode);
+
+  document.getElementById('terminalToggle').addEventListener('click', () => {
+    terminalVisible = !terminalVisible;
+    document.getElementById('output').style.display = terminalVisible ? 'block' : 'none';
+  });
+
+  loadPyodideAndSetup();
 </script>
 
 </body>
 </html>
-
