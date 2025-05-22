@@ -1,203 +1,174 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8" />
-<title>Guesslang + Pyodide + Monaco + HTML Preview</title>
-<script src="https://cdn.jsdelivr.net/pyodide/v0.23.3/full/pyodide.js"></script>
-<script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
-<style>
-  body, html {
-    margin:0; padding:0; height: 100vh; display: flex; flex-direction: column; background:#1e1e1e; color:#ccc;
-    font-family: monospace;
-  }
-  #info {
-    padding: 5px 10px; background: #333;
-  }
-  #main {
-    flex: 1; display: flex; flex-direction: row; height: calc(100vh - 80px);
-    overflow: hidden;
-  }
-  #editor {
-    flex: 1; height: 100%;
-  }
-  #previewContainer {
-    width: 50%; height: 100%; border-left: 2px solid #444;
-    display: flex; flex-direction: column;
-  }
-  #preview {
-    flex: 1; border: none; background: white;
-  }
-  #terminal {
-    height: 150px; background: black; color: white; padding: 10px; overflow-y: auto; font-family: monospace;
-  }
-  #runBtn {
-    padding: 10px 15px; font-size: 1.1em; cursor: pointer; background: #007acc; border: none; color: white;
-  }
-  #runBtn:hover {
-    background: #005f99;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <title>Tarayıcı VSCode-Style IDE</title>
+
+  <style>
+    html, body {
+      margin:0; padding:0; height:100%;
+      background: #1e1e1e;
+      color: #ddd;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    #toolbar {
+      background: #007acc;
+      padding: 8px 12px;
+      color: white;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      user-select: none;
+    }
+    #runBtn {
+      background: #0a7ad9;
+      border: none;
+      padding: 6px 16px;
+      color: white;
+      border-radius: 3px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.3s;
+    }
+    #runBtn:hover {
+      background: #005aab;
+    }
+
+    #container {
+      flex: 1;
+      display: flex;
+      height: calc(100% - 42px);
+      overflow: hidden;
+    }
+
+    #editor {
+      width: 60%;
+      height: 100%;
+      border-right: 2px solid #333;
+    }
+
+    #sidePanel {
+      width: 40%;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: #252526;
+      color: #ccc;
+      font-size: 14px;
+      overflow: hidden;
+    }
+
+    #outputHeader {
+      padding: 10px;
+      border-bottom: 1px solid #444;
+      font-weight: 700;
+      background: #1e1e1e;
+      color: #0ff;
+      user-select: none;
+    }
+
+    #output, #highlighted {
+      flex: 1;
+      background: #1e1e1e;
+      margin: 10px;
+      padding: 12px;
+      border-radius: 5px;
+      font-family: "Source Code Pro", monospace;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      box-sizing: border-box;
+    }
+
+    #highlighted {
+      background: #111;
+    }
+
+    pre {
+      margin: 0;
+    }
+  </style>
+
+  <!-- Monaco Editor -->
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
+  <!-- Pyodide -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+  <!-- Highlight.js -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.8.0/styles/github-dark.css" />
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.8.0/lib/common.min.js"></script>
+
 </head>
 <body>
 
-<div id="info">Tahmin edilen dil: <span id="langDisplay">Yükleniyor...</span></div>
-<div id="main">
-  <div id="editor"></div>
-  <div id="previewContainer">
-    <iframe id="preview" sandbox="allow-scripts allow-same-origin"></iframe>
-    <div id="terminal">Çıktı burada...</div>
-    <button id="runBtn">Çalıştır</button>
+  <div id="toolbar">
+    <span>Tarayıcı VSCode-Style IDE</span>
+    <button id="runBtn">🚀 ÇALIŞTIR</button>
+    <span id="langDisplay">Dil: -</span>
   </div>
-</div>
 
-<script>
-  let pyodide;
-  let guesslangReady = false;
-  let editor;
-  let lastLang = "plaintext";
+  <div id="container">
+    <div id="editor"></div>
+    <div id="sidePanel">
+      <div id="outputHeader">Çıktı</div>
+      <pre id="output">Henüz çalıştırılmadı.</pre>
 
-  async function initPyodide() {
-    pyodide = await loadPyodide();
-    updateTerminal("Pyodide Yüklendi")
-    await pyodide.loadPackage('micropip');
-    await pyodide.runPythonAsync(`
-import micropip
-await micropip.install("guesslang")
-from guesslang import Guess
-guess = Guess()
-    `);
-    guesslangReady = true;
-    document.getElementById('langDisplay').textContent = "Hazır, kod yaz!";
-    console.log("🐍 Pyodide ve Guesslang yüklendi.");
-  };
+      <div id="outputHeader" style="margin-top:10px;">Renklendirilmiş Kod (Highlight.js)</div>
+      <pre><code id="highlightedCode" class="hljs"></code></pre>
+    </div>
+  </div>
 
-  // Monaco Editor başlatma
-  require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@latest/min/vs' }});
-  require(['vs/editor/editor.main'], function() {
-    editor = monaco.editor.create(document.getElementById('editor'), {
-      language: 'plaintext',
-      theme: 'vs-dark',
-      automaticLayout: true,
-      fontSize: 16,
-      minimap: { enabled: false },
+  <script>
+    let editor, pyodide;
+
+    // Monaco yükle
+    require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs' }});
+    require(['vs/editor/editor.main'], function () {
+      editor = monaco.editor.create(document.getElementById('editor'), {
+        value: `# Python örnek kodu\nprint("Merhaba, VSCode tarayıcıda!")\n`,
+        language: 'python',
+        theme: 'vs-dark',
+        automaticLayout: true,
+        minimap: { enabled: false },
+      });
     });
 
-    editor.onDidChangeModelContent(debounce(async () => {
-      if (!guesslangReady) return;
+    // Pyodide yükle
+    async function initPyodide() {
+      pyodide = await loadPyodide();
+    }
+    initPyodide();
+
+    // Buton ve elemanlar
+    const runBtn = document.getElementById('runBtn');
+    const output = document.getElementById('output');
+    const langDisplay = document.getElementById('langDisplay');
+    const highlightedCode = document.getElementById('highlightedCode');
+
+    runBtn.onclick = async () => {
       const code = editor.getValue();
-      if (code.trim().length === 0) {
-        updateLanguage("plaintext");
-        updatePreview("");
-        return;
-      }
-      try {
-        const pyCode = `
-result = guess.language_name("""${code.replace(/"""|\\/g, (m) => m === '"""' ? '\\"\\"\\"' : '\\\\')}""")
-result
-        `;
-        const lang = await pyodide.runPythonAsync(pyCode);
-        updateLanguage(lang);
-        if (lang.toLowerCase() === "html" || lang.toLowerCase() === "javascript" || lang.toLowerCase() === "typescript") {
-          updatePreview(code);
-          updateTerminal("HTML/JS/TS detected - preview aktif.");
-        } else {
-          updatePreview("");
-          updateTerminal("Preview kapalı - sadece çıktı gösteriliyor.");
-        }
-      } catch (e) {
-        console.error("Guesslang hatası:", e);
-        updateLanguage("plaintext");
-        updatePreview("");
-        updateTerminal("Tahmin hatası, preview kapalı.");
-      }
-    }, 500));
-  });
 
-  function updateLanguage(lang) {
-    lastLang = lang.toLowerCase();
-    document.getElementById('langDisplay').textContent = lang;
-    const monacoLangMap = {
-      'python': 'python',
-      'javascript': 'javascript',
-      'java': 'java',
-      'c++': 'cpp',
-      'c': 'c',
-      'html': 'html',
-      'ruby': 'ruby',
-      'go': 'go',
-      'php': 'php',
-      'shell': 'shell',
-      'typescript': 'typescript',
-      'plaintext': 'plaintext',
-    };
-    const mLang = monacoLangMap[lastLang] || 'plaintext';
-    monaco.editor.setModelLanguage(editor.getModel(), mLang);
-  }
+      // Kod dilini highlight.js ile bul
+      const hlResult = hljs.highlightAuto(code);
+      langDisplay.textContent = `Dil: ${hlResult.language || "Bilinmiyor"}`;
+      highlightedCode.innerHTML = hlResult.value;
 
-  function updatePreview(code) {
-    const preview = document.getElementById('preview');
-    if (!code) {
-      preview.srcdoc = "<html><body><i>Preview yok</i></body></html>";
-    } else {
-      preview.srcdoc = code;
-    }
-  }
-
-  function updateTerminal(text) {
-    document.getElementById('terminal').textContent = text;
-  }
-
-  function debounce(fn, delay) {
-    let timer;
-    return (...args) => {
-      clearTimeout(timer);
-      timer = setTimeout(() => fn(...args), delay);
-    };
-  }
-
-  document.getElementById('runBtn').addEventListener('click', async () => {
-    const code = editor.getValue();
-    const term = document.getElementById('terminal');
-    term.textContent = 'Çalışıyor... ⏳';
-
-    if (!guesslangReady) {
-      term.textContent = 'Guesslang hazır değil.';
-    }
-
-    try {
-      if (lastLang === 'python') {
-        let output = await pyodide.runPythonAsync(code);
-        if (output === undefined || output === null || output === '') output = '(Çıktı yok)';
-        term.textContent = output;
-        updatePreview(""); // Python için preview kapalı
-      }
-      else if (lastLang === 'javascript' || lastLang === 'typescript') {
+      // Eğer Python ise Pyodide ile çalıştır
+      if(hlResult.language === "python") {
         try {
-          let result = eval(code);
-          if (result === undefined || result === null) result = '(Çıktı yok)';
-          term.textContent = result.toString();
-          updatePreview(code); // JS/TS için preview açık
-        } catch (e) {
-          term.textContent = 'JS Hatası: ' + e;
-          updatePreview("");
+          await pyodide.loadPackagesFromImports(code);
+          let result = await pyodide.runPythonAsync(code);
+          output.textContent = result === undefined ? "✓ Çalıştırıldı, çıktı yok." : result;
+        } catch(e) {
+          output.textContent = `❌ Hata:\n${e}`;
         }
+      } else {
+        output.textContent = "⚠️ Yalnızca Python kodu çalıştırılabilir.";
       }
-      else if (lastLang === 'html') {
-        term.textContent = 'HTML - lütfen sağdaki önizlemeyi kontrol et.';
-        updatePreview(code); // HTML için preview açık
-      }
-      else {
-        term.textContent = `Bu dil (${lastLang}) için çalıştırma desteklenmiyor.`;
-        updatePreview("");
-      }
-    } catch (e) {
-      term.textContent = 'Hata: ' + e;
-      updatePreview("");
-    }
-  });
-
-  initPyodide();
-</script>
+    };
+  </script>
 
 </body>
 </html>
