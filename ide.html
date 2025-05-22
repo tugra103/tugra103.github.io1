@@ -1,174 +1,110 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Tarayıcı VSCode-Style IDE</title>
+<meta charset="UTF-8" />
+<title>Python IDE - Monaco + Pyodide</title>
+<style>
+  html, body {
+    margin:0; padding:0; height:100%;
+    background: #1e1e1e; color: #ddd;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+  #toolbar {
+    background: #007acc; padding: 8px 12px;
+    color: white; font-weight: 600;
+    display: flex; align-items: center; gap: 10px;
+    user-select: none;
+  }
+  #runBtn {
+    background: #0a7ad9; border: none; padding: 6px 16px;
+    color: white; border-radius: 3px; cursor: pointer;
+    font-weight: 600; transition: background-color 0.3s;
+  }
+  #runBtn:hover { background: #005aab; }
+  #container {
+    flex: 1; display: flex; height: calc(100% - 42px);
+    overflow: hidden;
+  }
+  #editor {
+    width: 60%; height: 100%; border-right: 2px solid #333;
+  }
+  #sidePanel {
+    width: 40%; display: flex; flex-direction: column; height: 100%;
+    background: #252526; color: #ccc; font-size: 14px; overflow: hidden;
+  }
+  #outputHeader {
+    padding: 10px; border-bottom: 1px solid #444;
+    font-weight: 700; background: #1e1e1e; color: #0ff;
+    user-select: none;
+  }
+  #output {
+    flex: 1; background: #1e1e1e; margin: 10px; padding: 12px;
+    border-radius: 5px; font-family: "Source Code Pro", monospace;
+    overflow: auto; white-space: pre-wrap; word-wrap: break-word;
+    box-sizing: border-box;
+  }
+  pre { margin: 0; }
+</style>
 
-  <style>
-    html, body {
-      margin:0; padding:0; height:100%;
-      background: #1e1e1e;
-      color: #ddd;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      overflow: hidden;
-      display: flex; flex-direction: column;
-    }
-    #toolbar {
-      background: #007acc;
-      padding: 8px 12px;
-      color: white;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      user-select: none;
-    }
-    #runBtn {
-      background: #0a7ad9;
-      border: none;
-      padding: 6px 16px;
-      color: white;
-      border-radius: 3px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: background-color 0.3s;
-    }
-    #runBtn:hover {
-      background: #005aab;
-    }
-
-    #container {
-      flex: 1;
-      display: flex;
-      height: calc(100% - 42px);
-      overflow: hidden;
-    }
-
-    #editor {
-      width: 60%;
-      height: 100%;
-      border-right: 2px solid #333;
-    }
-
-    #sidePanel {
-      width: 40%;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      background: #252526;
-      color: #ccc;
-      font-size: 14px;
-      overflow: hidden;
-    }
-
-    #outputHeader {
-      padding: 10px;
-      border-bottom: 1px solid #444;
-      font-weight: 700;
-      background: #1e1e1e;
-      color: #0ff;
-      user-select: none;
-    }
-
-    #output, #highlighted {
-      flex: 1;
-      background: #1e1e1e;
-      margin: 10px;
-      padding: 12px;
-      border-radius: 5px;
-      font-family: "Source Code Pro", monospace;
-      overflow: auto;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      box-sizing: border-box;
-    }
-
-    #highlighted {
-      background: #111;
-    }
-
-    pre {
-      margin: 0;
-    }
-  </style>
-
-  <!-- Monaco Editor -->
-  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
-  <!-- Pyodide -->
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
-  <!-- Highlight.js -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.8.0/styles/github-dark.css" />
-  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.8.0/lib/common.min.js"></script>
-
+<!-- Monaco Editor -->
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
+<!-- Pyodide -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
 </head>
 <body>
 
-  <div id="toolbar">
-    <span>Tarayıcı VSCode-Style IDE</span>
-    <button id="runBtn">🚀 ÇALIŞTIR</button>
-    <span id="langDisplay">Dil: -</span>
+<div id="toolbar">
+  <span>Python IDE - Monaco + Pyodide</span>
+  <button id="runBtn" disabled>🚀 ÇALIŞTIR</button>
+</div>
+
+<div id="container">
+  <div id="editor"></div>
+  <div id="sidePanel">
+    <div id="outputHeader">Çıktı</div>
+    <pre id="output">Henüz çalıştırılmadı.</pre>
   </div>
+</div>
 
-  <div id="container">
-    <div id="editor"></div>
-    <div id="sidePanel">
-      <div id="outputHeader">Çıktı</div>
-      <pre id="output">Henüz çalıştırılmadı.</pre>
+<script>
+  let editor, pyodide;
 
-      <div id="outputHeader" style="margin-top:10px;">Renklendirilmiş Kod (Highlight.js)</div>
-      <pre><code id="highlightedCode" class="hljs"></code></pre>
-    </div>
-  </div>
-
-  <script>
-    let editor, pyodide;
-
-    // Monaco yükle
-    require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs' }});
-    require(['vs/editor/editor.main'], function () {
-      editor = monaco.editor.create(document.getElementById('editor'), {
-        value: `# Python örnek kodu\nprint("Merhaba, VSCode tarayıcıda!")\n`,
-        language: 'python',
-        theme: 'vs-dark',
-        automaticLayout: true,
-        minimap: { enabled: false },
-      });
+  // Monaco Editor yükleme
+  require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs' }});
+  require(['vs/editor/editor.main'], function () {
+    editor = monaco.editor.create(document.getElementById('editor'), {
+      value: `# Python örnek kodu\nprint("Merhaba, Pyodide + Monaco!")\n`,
+      language: 'python',
+      theme: 'vs-dark',
+      automaticLayout: true,
+      minimap: { enabled: false },
     });
+  });
 
-    // Pyodide yükle
-    async function initPyodide() {
-      pyodide = await loadPyodide();
+  // Pyodide'yi asenkron yükle ve butonu aktif et
+  async function loadPyodideAndEnable() {
+    pyodide = await loadPyodide();
+    document.getElementById("runBtn").disabled = false;
+  }
+  loadPyodideAndEnable();
+
+  const runBtn = document.getElementById('runBtn');
+  const output = document.getElementById('output');
+
+  runBtn.onclick = async () => {
+    const code = editor.getValue();
+    output.textContent = "Çalıştırılıyor...";
+
+    try {
+      await pyodide.loadPackagesFromImports(code);
+      let result = await pyodide.runPythonAsync(code);
+      output.textContent = result === undefined ? "✓ Çalıştırıldı, çıktı yok." : result;
+    } catch (e) {
+      output.textContent = `❌ Hata:\n${e}`;
     }
-    initPyodide();
-
-    // Buton ve elemanlar
-    const runBtn = document.getElementById('runBtn');
-    const output = document.getElementById('output');
-    const langDisplay = document.getElementById('langDisplay');
-    const highlightedCode = document.getElementById('highlightedCode');
-
-    runBtn.onclick = async () => {
-      const code = editor.getValue();
-
-      // Kod dilini highlight.js ile bul
-      const hlResult = hljs.highlightAuto(code);
-      langDisplay.textContent = `Dil: ${hlResult.language || "Bilinmiyor"}`;
-      highlightedCode.innerHTML = hlResult.value;
-
-      // Eğer Python ise Pyodide ile çalıştır
-      if(hlResult.language === "python") {
-        try {
-          await pyodide.loadPackagesFromImports(code);
-          let result = await pyodide.runPythonAsync(code);
-          output.textContent = result === undefined ? "✓ Çalıştırıldı, çıktı yok." : result;
-        } catch(e) {
-          output.textContent = `❌ Hata:\n${e}`;
-        }
-      } else {
-        output.textContent = "⚠️ Yalnızca Python kodu çalıştırılabilir.";
-      }
-    };
-  </script>
+  };
+</script>
 
 </body>
 </html>
