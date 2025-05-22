@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Tarayıcı Tabanlı Python IDE (Pyodide + Monaco)</title>
+<title>Pyodide + Monaco Minimal IDE</title>
 
 <style>
   html, body {
@@ -74,11 +74,10 @@
 <div id="output">Terminal Çıktısı...</div>
 
 <script>
-  let pyodide = null;
-  let editor = null;
+  let pyodide; // Başta null ataması yok
+  let editor;
   let terminalVisible = false;
 
-  // Monaco config
   require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.33.0/min/vs' } });
   require(['vs/editor/editor.main'], () => {
     editor = monaco.editor.create(document.getElementById('editor'), {
@@ -95,31 +94,28 @@
   });
 
   async function loadPyodideAndSetup() {
-    document.getElementById('output').textContent = 'Pyodide yükleniyor...';
+    const outputElem = document.getElementById('output');
+    outputElem.textContent = 'Pyodide yükleniyor...';
     pyodide = await loadPyodide();
 
-    // stdout, stderr JS tarafına aktar
     pyodide.setStdout({
       batched: (s) => {
         if(terminalVisible) {
-          const out = document.getElementById('output');
-          out.textContent += s;
-          out.scrollTop = out.scrollHeight;
+          outputElem.textContent += s;
+          outputElem.scrollTop = outputElem.scrollHeight;
         }
       }
     });
     pyodide.setStderr({
       batched: (s) => {
         if(terminalVisible) {
-          const out = document.getElementById('output');
-          out.textContent += s;
-          out.scrollTop = out.scrollHeight;
+          outputElem.textContent += s;
+          outputElem.scrollTop = outputElem.scrollHeight;
         }
       }
     });
 
-    document.getElementById('output').textContent += '\nPyodide yüklendi!';
-
+    outputElem.textContent += '\nPyodide yüklendi!';
     document.getElementById('runBtn').disabled = false;
   }
 
