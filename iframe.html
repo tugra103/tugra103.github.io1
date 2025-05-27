@@ -143,7 +143,7 @@
         try {
           const test = iframe.contentWindow.location.href;
         } catch (err) {
-          alert("⚠️ iframe içeriğine erişim engellendi. (X-Frame-Options / CORS)");
+          alert(err);
           iframe.src = "";
         }
       }, 1500);
