@@ -1,121 +1,153 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>iFrame Yükleyici</title>
+  <meta charset="UTF-8">
+  <title>iFrame Gelişmiş Yükleyici</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    :root {
+      color-scheme: light dark;
+    }
     body {
-      font-family: sans-serif;
       margin: 0;
-      padding: 0;
-      background: #f4f4f4;
+      font-family: sans-serif;
       display: flex;
       flex-direction: column;
       height: 100vh;
+      background-color: #f0f0f0;
     }
-
     header {
-      background-color: #111;
+      background: #222;
       color: white;
       padding: 1rem;
       text-align: center;
     }
-
     form {
       display: flex;
+      gap: 0.5rem;
       padding: 1rem;
-      gap: 1rem;
       background: #fff;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-
-    input[type="text"] {
+    input {
       flex: 1;
       padding: 0.5rem;
       font-size: 1rem;
-      border: 1px solid #ccc;
       border-radius: 6px;
+      border: 1px solid #ccc;
     }
-
     button {
       padding: 0.5rem 1rem;
       font-size: 1rem;
-      background-color: #007bff;
+      background: #007bff;
       color: white;
       border: none;
       border-radius: 6px;
       cursor: pointer;
     }
-
     iframe {
       flex: 1;
-      border: none;
       width: 100%;
+      border: none;
     }
-
-    .warning {
-      color: red;
-      text-align: center;
-      margin-top: 0.5rem;
+    #history {
+      background: #fafafa;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .history-link {
+      margin-right: 1rem;
+      color: #007bff;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: #121212;
+      }
+      form, #history {
+        background: #1e1e1e;
+      }
+      input, button {
+        background: #2a2a2a;
+        color: white;
+        border-color: #555;
+      }
+      .history-link {
+        color: #4da3ff;
+      }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>🧭 iFrame Gösterici</h1>
+    🌐 iFrame Gelişmiş Yükleyici
   </header>
 
   <form onsubmit="loadIframe(event)">
-    <input type="text" id="urlInput" placeholder="URL girin (https:// ile başlayacak)" />
-    <button type="submit">Göster</button>
+    <input type="text" id="urlInput" placeholder="https://site.com" />
+    <button type="submit">Yükle</button>
   </form>
 
-  <div class="warning" id="warning"></div>
+  <div id="history"></div>
 
-  <iframe id="displayFrame" src="" sandbox="allow-scripts allow-same-origin"></iframe>
+  <iframe id="frame" src=""></iframe>
 
   <script>
-    const iframe = document.getElementById('displayFrame');
+    const iframe = document.getElementById('frame');
+    const historyDiv = document.getElementById('history');
+    let historyList = [];
 
-    // iframe yüklenemediğinde alert ver
-    iframe.addEventListener('error', (e) => {
-      alert("❌ iframe yüklenemedi. Site iframe'e izin vermiyor olabilir.");
-    });
+    function updateHistory(url) {
+      if (!historyList.includes(url)) {
+        historyList.push(url);
+        const link = document.createElement("span");
+        link.textContent = url;
+        link.className = "history-link";
+        link.onclick = () => {
+          document.getElementById('urlInput').value = url;
+          loadIframeFromHistory(url);
+        };
+        historyDiv.appendChild(link);
+      }
+    }
 
-    function loadIframe(e) {
-      e.preventDefault();
+    function loadIframeFromHistory(url) {
+      iframe.src = url;
+      setTimeout(() => {
+        try {
+          const test = iframe.contentWindow.location.href;
+        } catch (err) {
+          alert("⚠️ iframe içeriğine erişim engellendi. (X-Frame-Options / CORS)");
+          iframe.src = "";
+        }
+      }, 1500);
+    }
+
+    function loadIframe(event) {
+      event.preventDefault();
       const input = document.getElementById('urlInput').value.trim();
-      const warning = document.getElementById('warning');
 
       if (!/^https?:\/\//.test(input)) {
-        warning.textContent = "⚠️ Lütfen geçerli bir URL girin (https:// ile başlamalı)";
-        iframe.src = "";
+        alert("Lütfen geçerli bir URL girin (http:// veya https:// ile başlamalı)");
         return;
       }
 
-      warning.textContent = "";
-      try {
-        iframe.src = input;
+      iframe.src = input;
+      updateHistory(input);
 
-        // iframe'e yüklendikten sonra 2 saniye bekleyip test et (çünkü 'error' çoğu zaman tetiklenmez)
-        setTimeout(() => {
-          try {
-            // CORS kısıtlıysa erişim hata verir
-            const test = iframe.contentDocument || iframe.contentWindow.document;
-            if (!test || test.body.innerHTML.trim() === "") {
-              throw new Error();
-            }
-          } catch (err) {
-            alert(err);
-          }
-        }, 2000);
-
-      } catch (err) {
-        alert("❌ Bir hata oluştu: " + err.message);
-      }
+      // CORS ve X-Frame-Options kontrolü
+      setTimeout(() => {
+        try {
+          const test = iframe.contentWindow.location.href;
+        } catch (err) {
+          alert("⚠️ iframe içeriğine erişim engellendi. (X-Frame-Options / CORS)");
+          iframe.src = "";
+        }
+      }, 1500);
     }
   </script>
 </body>
 </html>
-
