@@ -1,1 +1,121 @@
-<iframe src="https://google.com" height=100% width=100% title="Iframe Example"></iframe>
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iFrame Yükleyici</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      background-color: #111;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    form {
+      display: flex;
+      padding: 1rem;
+      gap: 1rem;
+      background: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    iframe {
+      flex: 1;
+      border: none;
+      width: 100%;
+    }
+
+    .warning {
+      color: red;
+      text-align: center;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🧭 iFrame Gösterici</h1>
+  </header>
+
+  <form onsubmit="loadIframe(event)">
+    <input type="text" id="urlInput" placeholder="URL girin (https:// ile başlayacak)" />
+    <button type="submit">Göster</button>
+  </form>
+
+  <div class="warning" id="warning"></div>
+
+  <iframe id="displayFrame" src="" sandbox="allow-scripts allow-same-origin"></iframe>
+
+  <script>
+    const iframe = document.getElementById('displayFrame');
+
+    // iframe yüklenemediğinde alert ver
+    iframe.addEventListener('error', (e) => {
+      alert("❌ iframe yüklenemedi. Site iframe'e izin vermiyor olabilir.");
+    });
+
+    function loadIframe(e) {
+      e.preventDefault();
+      const input = document.getElementById('urlInput').value.trim();
+      const warning = document.getElementById('warning');
+
+      if (!/^https?:\/\//.test(input)) {
+        warning.textContent = "⚠️ Lütfen geçerli bir URL girin (https:// ile başlamalı)";
+        iframe.src = "";
+        return;
+      }
+
+      warning.textContent = "";
+      try {
+        iframe.src = input;
+
+        // iframe'e yüklendikten sonra 2 saniye bekleyip test et (çünkü 'error' çoğu zaman tetiklenmez)
+        setTimeout(() => {
+          try {
+            // CORS kısıtlıysa erişim hata verir
+            const test = iframe.contentDocument || iframe.contentWindow.document;
+            if (!test || test.body.innerHTML.trim() === "") {
+              throw new Error();
+            }
+          } catch (err) {
+            alert("❌ iframe içeriğine erişilemiyor. CORS veya güvenlik politikası engelliyor olabilir.");
+          }
+        }, 2000);
+
+      } catch (err) {
+        alert("❌ Bir hata oluştu: " + err.message);
+      }
+    }
+  </script>
+</body>
+</html>
+
