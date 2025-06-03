@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Offline Python IDE</title>
+<style>
+  body, html { margin: 0; height: 100%; display: flex; flex-direction: column; font-family: sans-serif; }
+  #editor { flex: 1; }
+  #output { height: 150px; overflow-y: auto; background: #f0f0f0; padding: 10px; white-space: pre-wrap; }
+  #buttons { padding: 10px; background: #ddd; }
+  button { margin-right: 10px; }
+</style>
+</head>
+<body>
+
+<div id="editor"></div>
+<div id="buttons">
+  <button id="runBtn">Çalıştır</button>
+  <button id="saveBtn">Kaydet</button>
+  <button id="loadBtn">Yükle</button>
+</div>
+<pre id="output"></pre>
+
+<script>
+  // Monaco Loader'ı yerelden yükle
+  require.config({ paths: { vs: './monaco-editor/vs' }});
+
+  let editor;
+  require(['vs/editor/editor.main'], function () {
+    editor = monaco.editor.create(document.getElementById('editor'), {
+      value: 'print("Merhaba Offline Python IDE!")',
+      language: 'python',
+      theme: 'vs-light',
+      automaticLayout: true,
+      fontSize: 16,
+    });
+  });
+
+  // Pyodide'yi yerelden yükle
+  async function loadPyodideAndPackages() {
+    self.pyodide = await loadPyodide({ indexURL : "./pyodide/" });
+  }
+
+  // Pyodide dosyasını yüklemek için script elementi ekle
+  function loadPyodideScript() {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = './pyodide/pyodide.js';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Pyodide yüklenemedi'));
+      document.head.appendChild(script);
+    });
+  }
+
+  async function main() {
+    await loadPyodideScript();
+    await loadPyodideAndPackages();
+  }
+  main();
+
+  async function runPython() {
+    if(!self.pyodide) {
+      alert("Pyodide henüz yüklenmedi, lütfen bekleyin.");
+      return;
+    }
+    const code = editor.getValue();
+    try {
+      const result = await self.pyodide.runPythonAsync(code);
+      document.getElementById('output').textContent = result ?? '';
+    } catch (e) {
+      document.getElementById('output').textContent = e;
+    }
+  }
+
+  function saveCode() {
+    localStorage.setItem('python_code', editor.getValue());
+    alert('Kod kaydedildi!');
+  }
+
+  function loadCode() {
+    const saved = localStorage.getItem('python_code');
+    if(saved) {
+      editor.setValue(saved);
+      alert('Kod yüklendi!');
+    } else {
+      alert('Kayıtlı kod bulunamadı!');
+    }
+  }
+
+  document.getElementById('runBtn').onclick = runPython;
+  document.getElementById('saveBtn').onclick = saveCode;
+  document.getElementById('loadBtn').onclick = loadCode;
+
+  // Monaco için require.js'yi yerel olarak yükle
+  // Eğer monaco-editor ile beraber require.js yoksa CDN'den getirmemek için
+  // monaco-editor içinde zaten var, sorun olmaz.
+</script>
+<script src="./monaco-editor/vs/loader.js"></script>
+
+</body>
+</html>
